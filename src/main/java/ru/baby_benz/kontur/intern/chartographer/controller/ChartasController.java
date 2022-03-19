@@ -4,11 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.baby_benz.kontur.intern.chartographer.service.ChartasService;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 
 @Slf4j
