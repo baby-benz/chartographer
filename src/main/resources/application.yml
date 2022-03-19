@@ -1,0 +1,11 @@
+image:
+  type: BMP
+  parent-path: ./chartas
+
+server:
+  port: 8080
+
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
