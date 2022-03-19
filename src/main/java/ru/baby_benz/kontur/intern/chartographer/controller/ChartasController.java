@@ -17,7 +17,7 @@ public class ChartasController {
     private final ChartasService chartasService;
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping(consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PostMapping
     public String createCharta(@RequestParam int width, @RequestParam int height) {
         return chartasService.createCharta(width, height);
     }
