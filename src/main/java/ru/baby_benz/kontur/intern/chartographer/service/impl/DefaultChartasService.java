@@ -65,7 +65,7 @@ public class DefaultChartasService implements ChartasService {
     }
 
     @Override
-    public void putFragment(String id, int x, int y, int width, int height, InputStream fragmentData) {
+    public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
         if (pathsToChartas.contains(id)) {
             String imageType = imageProperties.getType();
             String fileName = id + "." + imageType.toLowerCase();
@@ -73,7 +73,7 @@ public class DefaultChartasService implements ChartasService {
             File chartaFile = new File(pathToChartas, fileName);
 
             try {
-                BufferedImage fragment = ImageIO.read(fragmentData);
+                BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
 
                 BufferedImage fragmentOnCharta =  drawFragmentOnCharta(chartaFile, x, y, fragment);
 
