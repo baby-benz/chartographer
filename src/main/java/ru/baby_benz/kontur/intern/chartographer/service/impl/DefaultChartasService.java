@@ -59,13 +59,12 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
-        isInNegativePlane(x, y, width, height);
+        checkForPlaneNegativity(x, y, width, height);
         LockType lockType = LockType.EXCLUSIVE;
         try {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
             if (isLockAcquired) {
-                Thread.sleep(15000);
                 String fileName = id + "." + imageType.toLowerCase();
                 File chartaFile = new File(parentPath, fileName);
 
@@ -102,7 +101,7 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
-        isInNegativePlane(x, y, width, height);
+        checkForPlaneNegativity(x, y, width, height);
         LockType lockType = LockType.SHARED;
         try {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
@@ -181,7 +180,7 @@ public class DefaultChartasService implements ChartasService {
         return fragmentOnCharta;
     }
 
-    private void isInNegativePlane(int x, int y, int width, int height) {
+    private void checkForPlaneNegativity(int x, int y, int width, int height) {
         if (x + width < 0 || y + height < 0) {
             throw new IllegalCoordinateFormatException(x, y, width, height);
         }
