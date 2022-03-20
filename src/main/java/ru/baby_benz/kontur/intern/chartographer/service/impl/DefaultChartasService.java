@@ -107,7 +107,6 @@ public class DefaultChartasService implements ChartasService {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
             if (isLockAcquired) {
-                Thread.sleep(15000);
                 String fileName = id + "." + imageType.toLowerCase();
                 try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, fileName)))) {
                     BufferedImage image = ImageIO.read(is);
