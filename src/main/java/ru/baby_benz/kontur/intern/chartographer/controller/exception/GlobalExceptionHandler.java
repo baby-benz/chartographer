@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ServiceIsUnavailableException.class)
-    protected ResponseEntity<ApiError> handleFileIsLockedException(ServiceIsUnavailableException ex, WebRequest request) {
+    protected ResponseEntity<ApiError> handleServiceIsUnavailableException(ServiceIsUnavailableException ex, WebRequest request) {
         List<String> errors = Collections.singletonList(ex.getMessage());
         return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
     }
