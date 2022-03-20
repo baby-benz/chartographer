@@ -68,7 +68,7 @@ public class DefaultChartasService implements ChartasService {
         try {
             ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
         } catch (IOException ioException) {
-            throw new ChartaIOException("Error creating a new charta.");
+            throw new ChartaIOException("I/O error during creating a new charta");
         }
 
         return id;
