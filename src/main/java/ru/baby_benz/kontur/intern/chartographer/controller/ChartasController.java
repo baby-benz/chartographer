@@ -32,7 +32,7 @@ public class ChartasController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{id}/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public Resource getCharta(@PathVariable("id") String chartaId,
+    public Resource getFragment(@PathVariable("id") String chartaId,
                               @RequestParam int x, @RequestParam int y,
                               @RequestParam int width, @RequestParam int height) {
         return chartasService.getFragment(chartaId, x, y, width, height);
