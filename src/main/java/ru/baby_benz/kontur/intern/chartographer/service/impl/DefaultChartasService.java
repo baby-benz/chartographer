@@ -7,7 +7,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import ru.baby_benz.kontur.intern.chartographer.controller.exception.ChartaIOException;
 import ru.baby_benz.kontur.intern.chartographer.controller.exception.ChartaNotFoundException;
+import ru.baby_benz.kontur.intern.chartographer.controller.exception.FileIsLockedException;
+import ru.baby_benz.kontur.intern.chartographer.controller.exception.ServiceIsUnavailableException;
 import ru.baby_benz.kontur.intern.chartographer.service.ChartasService;
+import ru.baby_benz.kontur.intern.chartographer.service.LockerService;
 import ru.baby_benz.kontur.intern.chartographer.util.IdGenerator;
 
 import javax.annotation.PostConstruct;
@@ -92,10 +95,35 @@ public class DefaultChartasService implements ChartasService {
     }
 
     @Override
-    public InputStream getFragment(String id, int x, int y, int width, int height) {
-        final Path varPath = Path.of("");
-        //return Files.newInputStream(varPath);
-        return null;
+    public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
+        if (pathsToChartas.contains(id)) {
+            try {
+                boolean isLockAcquired = lockerService.acquireSharedLock();
+
+                if (isLockAcquired) {
+                    String fileName = id + "." + imageType.toLowerCase();
+                    try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, fileName)))) {
+                        BufferedImage image = ImageIO.read(is);
+
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+                        ImageIO.write(image.getSubimage(x, y, width, height), imageType, os);
+
+                        return new InputStreamResource(new ByteArrayInputStream(os.toByteArray()));
+                    } catch (IOException e) {
+                        lockerService.freeSharedLock();
+                        throw new ChartaIOException("I/O error during fragment extraction occurred");
+                    }
+                } else {
+                    throw new FileIsLockedException(id);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
+            }
+        } else {
+            throw new ChartaNotFoundException(id);
+        }
     }
 
     private BufferedImage drawFragmentOnCharta(File chartaFile, int x, int y, BufferedImage fragment) throws IOException {
