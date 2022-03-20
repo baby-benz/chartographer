@@ -1,6 +1,12 @@
-image:
-  type: BMP
-  parent-path: ./chartas
+service:
+  http:
+    unavailable:
+      retry-after: 10
+  image:
+    type: BMP
+    parent-path: ./chartas
+    lock:
+      trying-time: 10
 
 server:
   port: 8080
