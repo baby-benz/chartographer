@@ -1,5 +1,6 @@
 package ru.baby_benz.kontur.intern.chartographer.controller.exception;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,9 @@ import java.util.List;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    @Value("${service.http.unavailable.retry-after}")
+    private String retryAfter;
+
     @ExceptionHandler
     public final ResponseEntity<ApiError> handleException(Exception ex, WebRequest request) {
         List<String> errors = Collections.singletonList(ex.getMessage());
@@ -31,6 +35,20 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiError> handleChartaNotFoundException(ChartaNotFoundException ex, WebRequest request) {
         List<String> errors = Collections.singletonList(ex.getMessage());
         return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+    }
+
+    @ExceptionHandler(FileIsLockedException.class)
+    protected ResponseEntity<ApiError> handleFileIsLockedException(FileIsLockedException ex, WebRequest request) {
+        List<String> errors = Collections.singletonList(ex.getMessage());
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.RETRY_AFTER, retryAfter);
+        return handleExceptionInternal(ex, new ApiError(errors), headers, HttpStatus.SERVICE_UNAVAILABLE, request);
+    }
+
+    @ExceptionHandler(ServiceIsUnavailableException.class)
+    protected ResponseEntity<ApiError> handleFileIsLockedException(ServiceIsUnavailableException ex, WebRequest request) {
+        List<String> errors = Collections.singletonList(ex.getMessage());
+        return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
     }
 
     protected ResponseEntity<ApiError> handleExceptionInternal(Exception ex, @Nullable ApiError body,
