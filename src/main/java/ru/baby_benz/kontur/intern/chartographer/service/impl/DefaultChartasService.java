@@ -82,7 +82,7 @@ public class DefaultChartasService implements ChartasService {
                 throw new ChartaIOException("I/O error during fragment putting occurred");
             }
         } else {
-            throw new ChartaNotFoundException("Charta with specified id not found");
+            throw new ChartaNotFoundException(id);
         }
     }
 
