@@ -1,6 +1,9 @@
 package ru.baby_benz.kontur.intern.chartographer.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import ru.baby_benz.kontur.intern.chartographer.configuration.property.ImageProperties;
 import ru.baby_benz.kontur.intern.chartographer.controller.exception.ChartaIOException;
@@ -22,20 +25,28 @@ import java.util.ArrayList;
 @RequiredArgsConstructor
 @Service
 public class DefaultChartasService implements ChartasService {
-    private final ImageProperties imageProperties;
+    private final LockerService lockerService;
+    @Value("${service.image.type}")
+    private String imageType;
+    @Value("${service.image.parent-path}")
+    private String parentPath;
     private final List<String> pathsToChartas = new ArrayList<>();
 
     @PostConstruct
+    private void prepareService() {
+        createChartasFolder();
+        discoverChartas();
+    }
+
     private void createChartasFolder() {
-        File chartasFolder = new File(imageProperties.getParentPath());
+        File chartasFolder = new File(parentPath);
         if (!chartasFolder.exists()){
             chartasFolder.mkdir();
         }
     }
 
-    @PostConstruct
     private void discoverChartas() {
-        File chartasFolder = new File(imageProperties.getParentPath());
+        File chartasFolder = new File(parentPath);
         File[] chartasFiles = chartasFolder.listFiles();
         String fileName;
         if (chartasFiles != null && chartasFiles.length > 0) {
@@ -51,12 +62,10 @@ public class DefaultChartasService implements ChartasService {
         BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
         String id = IdGenerator.getUUID().toString();
-        String imageType = imageProperties.getType();
-        String pathToChartas = imageProperties.getParentPath();
         String fileName = id + "." + imageType.toLowerCase();
 
         try {
-            ImageIO.write(bmp, imageType, new File(pathToChartas, fileName));
+            ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
         } catch (IOException ioException) {
             throw new ChartaIOException("Error creating a new charta.");
         }
@@ -67,10 +76,8 @@ public class DefaultChartasService implements ChartasService {
     @Override
     public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
         if (pathsToChartas.contains(id)) {
-            String imageType = imageProperties.getType();
             String fileName = id + "." + imageType.toLowerCase();
-            String pathToChartas = imageProperties.getParentPath();
-            File chartaFile = new File(pathToChartas, fileName);
+            File chartaFile = new File(parentPath, fileName);
 
             try {
                 BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
@@ -97,7 +104,7 @@ public class DefaultChartasService implements ChartasService {
         BufferedImage charta = ImageIO.read(chartaFile);
         BufferedImage fragmentOnCharta = new BufferedImage(charta.getWidth(), charta.getHeight(), BufferedImage.TYPE_INT_RGB);
 
-        Graphics fragmentOnChartaGraphics = fragmentOnCharta.getGraphics();
+        Graphics2D fragmentOnChartaGraphics = fragmentOnCharta.createGraphics();
 
         fragmentOnChartaGraphics.drawImage(charta, 0, 0, null);
         fragmentOnChartaGraphics.drawImage(fragment, x, y, null);
