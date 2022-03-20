@@ -37,4 +37,10 @@ public class ChartasController {
                               @RequestParam int width, @RequestParam int height) {
         return chartasService.getFragment(chartaId, x, y, width, height);
     }
+
+    @ResponseStatus(HttpStatus.OK)
+    @DeleteMapping(value = "/{id}/")
+    public void deleteCharta(@PathVariable("id") String chartaId) {
+        chartasService.deleteCharta(chartaId);
+    }
 }

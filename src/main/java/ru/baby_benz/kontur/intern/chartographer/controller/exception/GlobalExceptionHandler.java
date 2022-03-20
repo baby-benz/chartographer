@@ -51,6 +51,12 @@ public class GlobalExceptionHandler {
         return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
     }
 
+    @ExceptionHandler(IllegalCoordinateFormatException.class)
+    protected ResponseEntity<ApiError> handleIllegalCoordinateFormatException(IllegalCoordinateFormatException ex, WebRequest request) {
+        List<String> errors = Collections.singletonList(ex.getMessage());
+        return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
     protected ResponseEntity<ApiError> handleExceptionInternal(Exception ex, @Nullable ApiError body,
                                                                HttpHeaders headers, HttpStatus status,
                                                                WebRequest request) {

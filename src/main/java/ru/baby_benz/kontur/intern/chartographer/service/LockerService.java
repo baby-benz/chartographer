@@ -1,11 +1,13 @@
 package ru.baby_benz.kontur.intern.chartographer.service;
 
+import ru.baby_benz.kontur.intern.chartographer.service.impl.LockType;
+
 public interface LockerService {
-    boolean acquireExclusiveLock() throws InterruptedException;
+    void createAndAcquireLock(String id, LockType lockType);
 
-    boolean acquireSharedLock() throws InterruptedException;
+    boolean acquireLock(String id, LockType lockType) throws InterruptedException;
 
-    void freeExclusiveLock();
+    void freeLock(String id, LockType lockType);
 
-    void freeSharedLock();
+    void removeLock(String id);
 }
