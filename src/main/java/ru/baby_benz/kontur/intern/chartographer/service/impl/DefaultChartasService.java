@@ -41,20 +41,24 @@ public class DefaultChartasService implements ChartasService {
     @Override
     public String createCharta(int width, int height) {
         String id = IdGenerator.getUUID().toString();
-
-        lockerService.createAndAcquireLock(id, LockType.EXCLUSIVE);
-
-        BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-        String fileName = id + "." + imageType.toLowerCase();
-
+        LockType lockType = LockType.EXCLUSIVE;
         try {
-            ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
-        } catch (IOException ioException) {
-            throw new ChartaIOException("I/O error during creating a new charta");
-        }
+            lockerService.createAndAcquireLock(id, LockType.EXCLUSIVE);
 
-        return id;
+            BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+            String fileName = id + "." + imageType.toLowerCase();
+
+            try {
+                ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
+            } catch (IOException ioException) {
+                throw new ChartaIOException("I/O error during creating a new charta");
+            }
+
+            return id;
+        } finally {
+            lockerService.freeLock(id, lockType);
+        }
     }
 
     @Override
