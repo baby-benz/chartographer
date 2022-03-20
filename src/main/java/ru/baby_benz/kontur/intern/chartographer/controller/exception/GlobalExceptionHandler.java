@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ChartaNotFoundException.class)
-    protected ResponseEntity<ApiError> handleChartaNotFoundException(ChartaIOException ex, WebRequest request) {
+    protected ResponseEntity<ApiError> handleChartaNotFoundException(ChartaNotFoundException ex, WebRequest request) {
         List<String> errors = Collections.singletonList(ex.getMessage());
         return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
     }
