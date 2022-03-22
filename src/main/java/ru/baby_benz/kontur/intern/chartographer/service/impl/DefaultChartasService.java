@@ -162,7 +162,15 @@ public class DefaultChartasService implements ChartasService {
 
         BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
 
-        fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
+        if (x < 0 || y < 0) {
+            fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
+            if (x < 0) {
+                x = 0;
+            }
+            if (y < 0) {
+                y = 0;
+            }
+        }
 
         BufferedImage fragmentOnCharta = drawFragmentOnCharta(charta, x, y, fragment);
 
