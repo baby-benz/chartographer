@@ -51,8 +51,14 @@ public class GlobalExceptionHandler {
         return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
     }
 
-    @ExceptionHandler(IllegalCoordinateFormatException.class)
-    protected ResponseEntity<ApiError> handleIllegalCoordinateFormatException(IllegalCoordinateFormatException ex, WebRequest request) {
+    @ExceptionHandler(FragmentNegativePlaneException.class)
+    protected ResponseEntity<ApiError> handleFragmentNegativePlaneException(FragmentNegativePlaneException ex, WebRequest request) {
+        List<String> errors = Collections.singletonList(ex.getMessage());
+        return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(NoIntersectionException.class)
+    protected ResponseEntity<ApiError> handleNoIntersectionException(NoIntersectionException ex, WebRequest request) {
         List<String> errors = Collections.singletonList(ex.getMessage());
         return handleExceptionInternal(ex, new ApiError(errors), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }

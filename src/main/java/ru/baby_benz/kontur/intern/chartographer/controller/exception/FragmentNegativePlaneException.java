@@ -4,16 +4,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-public class IllegalCoordinateFormatException extends RuntimeException {
-    public IllegalCoordinateFormatException() {
+public class FragmentNegativePlaneException extends RuntimeException {
+    public FragmentNegativePlaneException() {
         super();
     }
 
-    public IllegalCoordinateFormatException(final String message, final Throwable cause) {
+    public FragmentNegativePlaneException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public IllegalCoordinateFormatException(int x, int y, int width, int height) {
+    public FragmentNegativePlaneException(int x, int y, int width, int height) {
         super(
                 "Passed fragment has wrong parameters(x := " +
                 x +
@@ -23,12 +23,11 @@ public class IllegalCoordinateFormatException extends RuntimeException {
                 width +
                 ",height:=" +
                 height +
-                "). " +
-                "The result of (x + width) or (y + height) couldn't be negative"
+                "). Fragment located entirely in the negative plane"
         );
     }
 
-    public IllegalCoordinateFormatException(final Throwable cause) {
+    public FragmentNegativePlaneException(final Throwable cause) {
         super(cause);
     }
 }
