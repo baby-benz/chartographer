@@ -224,7 +224,7 @@ public class DefaultChartasService implements ChartasService {
     }
 
     private boolean isPlaneNegative(int x, int y, int fragmentWidth, int fragmentHeight) {
-        return x + fragmentWidth < 0 || y + fragmentHeight < 0;
+        return x + fragmentWidth <= 0 || y + fragmentHeight <= 0;
     }
 
     private boolean doesFragmentIntersectCharta(int x, int y, int chartaWidth, int chartaHeight) {
@@ -239,19 +239,17 @@ public class DefaultChartasService implements ChartasService {
     }
 
     private BufferedImage cropToSizeFromLeftAndTop(BufferedImage image, int x, int y, int width, int height) {
-        if (x < 0 || y < 0) {
-            if (x < 0) {
-                width += x;
-                x = 0;
-            }
-            if (y < 0) {
-                height += y;
-                y = 0;
-            }
-            image = image.getSubimage(x, y, width, height);
+        int xToStartCropFrom = 0, yToStartCropFrom = 0;
+        int widthToCrop = width, heightToCrop = height;
+        if (x < 0) {
+            xToStartCropFrom = x + width;
+            widthToCrop += x;
         }
-
-        return image;
+        if (y < 0) {
+            yToStartCropFrom = y + height;
+            heightToCrop += y;
+        }
+        return image.getSubimage(xToStartCropFrom, yToStartCropFrom, widthToCrop, heightToCrop);
     }
 
     private BufferedImage cropToSizeFromRightAndBottom(BufferedImage image, int x, int y, int width, int height,
