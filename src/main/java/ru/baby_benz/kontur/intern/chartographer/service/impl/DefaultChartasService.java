@@ -72,22 +72,52 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
+        if (isPlaneNegative(x, y, width, height)) {
+            throw new FragmentNegativePlaneException(x, y, width, height);
+        }
+
+        LockType lockType = LockType.EXCLUSIVE;
+
+        try {
+            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
+
+            if (isLockAcquired) {
+                try {
+                    insertFragmentIntoCharta(id, x, y, width, height, fragmentData);
+                } catch (IOException ioException) {
+                    lockerService.freeLock(id, lockType);
+                    throw new ChartaIOException("I/O error during fragment putting occurred");
+                }
+            } else {
+                throw new FileIsLockedException(id);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
+        } finally {
+            lockerService.freeLock(id, lockType);
+        }
+    }
+
+    @Override
+    public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
         if (width <= maximumAllowedFragmentWidth && height <= maximumAllowedFragmentWidth) {
             if (isPlaneNegative(x, y, width, height)) {
                 throw new FragmentNegativePlaneException(x, y, width, height);
             }
 
-            LockType lockType = LockType.EXCLUSIVE;
+            LockType lockType = LockType.SHARED;
 
             try {
                 boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
                 if (isLockAcquired) {
-                    try {
-                        insertFragmentIntoCharta(id, x, y, width, height, fragmentData);
-                    } catch (IOException ioException) {
+                    String chartaFileName = id + "." + imageType.toLowerCase();
+                    try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, chartaFileName)))) {
+                        return extractFragmentFromCharta(is, x, y, width, height);
+                    } catch (IOException e) {
                         lockerService.freeLock(id, lockType);
-                        throw new ChartaIOException("I/O error during fragment putting occurred");
+                        throw new ChartaIOException("I/O error during fragment extraction occurred");
                     }
                 } else {
                     throw new FileIsLockedException(id);
@@ -100,36 +130,6 @@ public class DefaultChartasService implements ChartasService {
             }
         } else {
             throw new TooBigFragmentException(width, height, maximumAllowedFragmentWidth, maximumAllowedFragmentHeight);
-        }
-    }
-
-    @Override
-    public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
-        if (isPlaneNegative(x, y, width, height)) {
-            throw new FragmentNegativePlaneException(x, y, width, height);
-        }
-
-        LockType lockType = LockType.SHARED;
-
-        try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
-
-            if (isLockAcquired) {
-                String chartaFileName = id + "." + imageType.toLowerCase();
-                try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, chartaFileName)))) {
-                    return extractFragmentFromCharta(is, x, y, width, height);
-                } catch (IOException e) {
-                    lockerService.freeLock(id, lockType);
-                    throw new ChartaIOException("I/O error during fragment extraction occurred");
-                }
-            } else {
-                throw new FileIsLockedException(id);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
-        } finally {
-            lockerService.freeLock(id, lockType);
         }
     }
 
