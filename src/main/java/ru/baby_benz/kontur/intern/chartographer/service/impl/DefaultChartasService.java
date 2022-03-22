@@ -58,6 +58,7 @@ public class DefaultChartasService implements ChartasService {
                 try {
                     ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
                 } catch (IOException ioException) {
+                    lockerService.removeLock(id);
                     throw new ChartaIOException("I/O error during creating a new charta");
                 }
 
