@@ -261,12 +261,12 @@ public class DefaultChartasService implements ChartasService {
 
         if (fragmentEndX > targetWidth || fragmentEndY > targetHeight) {
             if (fragmentEndX > targetWidth) {
-                width = fragmentEndX - targetWidth;
+                width = targetWidth - x;
             }
             if (fragmentEndY > targetHeight) {
-                height = fragmentEndY - targetHeight;
+                height = targetHeight - y;
             }
-            image = image.getSubimage(x, y, width, height);
+            image = image.getSubimage(0, 0, width, height);
         }
 
         return image;
