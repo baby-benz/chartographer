@@ -15,7 +15,7 @@ public class FragmentNegativePlaneException extends RuntimeException {
 
     public FragmentNegativePlaneException(int x, int y, int width, int height) {
         super(
-                "Passed fragment has wrong parameters(x := " +
+                "Passed fragment has wrong parameters(x:=" +
                 x +
                 ",y:=" +
                 y +
