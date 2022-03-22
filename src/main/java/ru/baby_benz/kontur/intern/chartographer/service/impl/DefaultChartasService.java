@@ -26,10 +26,14 @@ public class DefaultChartasService implements ChartasService {
     private String imageType;
     @Value("${service.image.parent-path}")
     private String parentPath;
-    @Value("${service.image.maximum-dimensions.width}")
-    private int maximumAllowedWidth;
-    @Value("${service.image.maximum-dimensions.height}")
-    private int maximumAllowedHeight;
+    @Value("${service.image.charta.maximum-dimensions.width}")
+    private int maximumAllowedChartaWidth;
+    @Value("${service.image.charta.maximum-dimensions.height}")
+    private int maximumAllowedChartaHeight;
+    @Value("${service.image.fragment.maximum-dimensions.width}")
+    private int maximumAllowedFragmentWidth;
+    @Value("${service.image.fragment.maximum-dimensions.height}")
+    private int maximumAllowedFragmentHeight;
 
     @PostConstruct
     private void createChartasFolder() {
@@ -41,7 +45,7 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public String createCharta(int width, int height) {
-        if (width <= maximumAllowedWidth && height <= maximumAllowedHeight) {
+        if (width <= maximumAllowedChartaWidth && height <= maximumAllowedChartaHeight) {
             String id = IdGenerator.getUUID().toString();
             LockType lockType = LockType.EXCLUSIVE;
             try {
@@ -62,39 +66,40 @@ public class DefaultChartasService implements ChartasService {
                 lockerService.freeLock(id, lockType);
             }
         } else {
-            throw new TooBigChartaException(width, height, maximumAllowedWidth, maximumAllowedHeight);
+            throw new TooBigChartaException(width, height, maximumAllowedChartaWidth, maximumAllowedChartaHeight);
         }
     }
 
     @Override
     public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
-        if (isPlaneNegative(x, y, width, height)) {
-            throw new FragmentNegativePlaneException(x, y, width, height);
-        }
-
-        LockType lockType = LockType.EXCLUSIVE;
-
-        try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
-
-            if (isLockAcquired) {
-                String fileName = id + "." + imageType.toLowerCase();
-                File chartaFile = new File(parentPath, fileName);
-
-                try {
-                    insertFragmentIntoCharta(chartaFile, x, y, width, height, fragmentData);
-                } catch (IOException ioException) {
-                    lockerService.freeLock(id, lockType);
-                    throw new ChartaIOException("I/O error during fragment putting occurred");
-                }
-            } else {
-                throw new FileIsLockedException(id);
+        if (width <= maximumAllowedFragmentWidth && height <= maximumAllowedFragmentWidth) {
+            if (isPlaneNegative(x, y, width, height)) {
+                throw new FragmentNegativePlaneException(x, y, width, height);
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
-        } finally {
-            lockerService.freeLock(id, lockType);
+
+            LockType lockType = LockType.EXCLUSIVE;
+
+            try {
+                boolean isLockAcquired = lockerService.acquireLock(id, lockType);
+
+                if (isLockAcquired) {
+                    try {
+                        insertFragmentIntoCharta(id, x, y, width, height, fragmentData);
+                    } catch (IOException ioException) {
+                        lockerService.freeLock(id, lockType);
+                        throw new ChartaIOException("I/O error during fragment putting occurred");
+                    }
+                } else {
+                    throw new FileIsLockedException(id);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
+            } finally {
+                lockerService.freeLock(id, lockType);
+            }
+        } else {
+            throw new TooBigFragmentException(width, height, maximumAllowedFragmentWidth, maximumAllowedFragmentHeight);
         }
     }
 
