@@ -1,7 +1,6 @@
 package ru.baby_benz.kontur.intern.chartographer.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -9,7 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import ru.baby_benz.kontur.intern.chartographer.service.ChartasService;
 
-@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/chartas")
