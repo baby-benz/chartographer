@@ -3,6 +3,9 @@ service:
     unavailable:
       retry-after: 10
   image:
+    maximum-dimensions:
+      width: 20000
+      height: 50000
     type: BMP
     parent-path: ./chartas
     lock:

@@ -26,6 +26,10 @@ public class DefaultChartasService implements ChartasService {
     private String imageType;
     @Value("${service.image.parent-path}")
     private String parentPath;
+    @Value("${service.image.maximum-dimensions.width}")
+    private int maximumAllowedWidth;
+    @Value("${service.image.maximum-dimensions.height}")
+    private int maximumAllowedHeight;
 
     @PostConstruct
     private void createChartasFolder() {
@@ -37,30 +41,34 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public String createCharta(int width, int height) {
-        String id = IdGenerator.getUUID().toString();
-        LockType lockType = LockType.EXCLUSIVE;
-        try {
-            lockerService.createAndAcquireLock(id, LockType.EXCLUSIVE);
-
-            BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-            String fileName = id + "." + imageType.toLowerCase();
-
+        if (width <= maximumAllowedWidth && height <= maximumAllowedHeight) {
+            String id = IdGenerator.getUUID().toString();
+            LockType lockType = LockType.EXCLUSIVE;
             try {
-                ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
-            } catch (IOException ioException) {
-                throw new ChartaIOException("I/O error during creating a new charta");
-            }
+                lockerService.createAndAcquireLock(id, LockType.EXCLUSIVE);
 
-            return id;
-        } finally {
-            lockerService.freeLock(id, lockType);
+                BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+                String fileName = id + "." + imageType.toLowerCase();
+
+                try {
+                    ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
+                } catch (IOException ioException) {
+                    throw new ChartaIOException("I/O error during creating a new charta");
+                }
+
+                return id;
+            } finally {
+                lockerService.freeLock(id, lockType);
+            }
+        } else {
+            throw new TooBigChartaException(width, height, maximumAllowedWidth, maximumAllowedHeight);
         }
     }
 
     @Override
     public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
-        if(isPlaneNegative(x, y, width, height)) {
+        if (isPlaneNegative(x, y, width, height)) {
             throw new FragmentNegativePlaneException(x, y, width, height);
         }
 
@@ -92,7 +100,7 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
-        if(isPlaneNegative(x, y, width, height)) {
+        if (isPlaneNegative(x, y, width, height)) {
             throw new FragmentNegativePlaneException(x, y, width, height);
         }
 
@@ -196,7 +204,7 @@ public class DefaultChartasService implements ChartasService {
         return new InputStreamResource(new ByteArrayInputStream(os.toByteArray()));
     }
 
-    private BufferedImage drawFragmentOnCharta(BufferedImage charta, int x, int y, BufferedImage fragment) throws IOException {
+    private BufferedImage drawFragmentOnCharta(BufferedImage charta, int x, int y, BufferedImage fragment) {
         BufferedImage fragmentOnCharta = new BufferedImage(charta.getWidth(), charta.getHeight(), BufferedImage.TYPE_INT_RGB);
 
         Graphics2D fragmentOnChartaGraphics = fragmentOnCharta.createGraphics();
@@ -224,7 +232,7 @@ public class DefaultChartasService implements ChartasService {
     }
 
     private BufferedImage cropToSize(BufferedImage image, int x, int y, int width, int height,
-                                          int targetWidth, int targetHeight) {
+                                     int targetWidth, int targetHeight) {
         image = cropToSizeFromLeftAndTop(image, x, y, width, height);
         image = cropToSizeFromRightAndBottom(image, x, y, width, height, targetWidth, targetHeight);
         return image;
@@ -247,7 +255,7 @@ public class DefaultChartasService implements ChartasService {
     }
 
     private BufferedImage cropToSizeFromRightAndBottom(BufferedImage image, int x, int y, int width, int height,
-                                                 int targetWidth, int targetHeight) {
+                                                       int targetWidth, int targetHeight) {
         int fragmentEndX = x + width;
         int fragmentEndY = y + height;
 
