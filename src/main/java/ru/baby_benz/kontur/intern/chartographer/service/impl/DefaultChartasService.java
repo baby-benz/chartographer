@@ -60,8 +60,12 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public void putFragment(String id, int x, int y, int width, int height, Resource fragmentData) {
-        checkForPlaneNegativity(x, y, width, height);
+        if(isPlaneNegative(x, y, width, height)) {
+            throw new FragmentNegativePlaneException(x, y, width, height);
+        }
+
         LockType lockType = LockType.EXCLUSIVE;
+
         try {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
@@ -70,21 +74,7 @@ public class DefaultChartasService implements ChartasService {
                 File chartaFile = new File(parentPath, fileName);
 
                 try {
-                    BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
-
-                    if (x < 0) {
-                        width += x;
-                        x = 0;
-                    }
-
-                    if (y < 0) {
-                        height += y;
-                        y = 0;
-                    }
-
-                    BufferedImage fragmentOnCharta = drawFragmentOnCharta(chartaFile, x, y, fragment);
-
-                    ImageIO.write(fragmentOnCharta, imageType, chartaFile);
+                    insertFragmentIntoCharta(chartaFile, x, y, width, height, fragmentData);
                 } catch (IOException ioException) {
                     lockerService.freeLock(id, lockType);
                     throw new ChartaIOException("I/O error during fragment putting occurred");
@@ -102,31 +92,19 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
-        checkForPlaneNegativity(x, y, width, height);
+        if(isPlaneNegative(x, y, width, height)) {
+            throw new FragmentNegativePlaneException(x, y, width, height);
+        }
+
         LockType lockType = LockType.SHARED;
+
         try {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
             if (isLockAcquired) {
-                String fileName = id + "." + imageType.toLowerCase();
-                try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, fileName)))) {
-                    BufferedImage image = ImageIO.read(is);
-
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-                    if (x < 0) {
-                        width += x;
-                        x = 0;
-                    }
-
-                    if (y < 0) {
-                        height += y;
-                        y = 0;
-                    }
-
-                    ImageIO.write(image.getSubimage(x, y, width, height), imageType, os);
-
-                    return new InputStreamResource(new ByteArrayInputStream(os.toByteArray()));
+                String chartaFileName = id + "." + imageType.toLowerCase();
+                try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, chartaFileName)))) {
+                    return extractFragmentFromCharta(is, x, y, width, height);
                 } catch (IOException e) {
                     lockerService.freeLock(id, lockType);
                     throw new ChartaIOException("I/O error during fragment extraction occurred");
@@ -166,8 +144,59 @@ public class DefaultChartasService implements ChartasService {
         }
     }
 
-    private BufferedImage drawFragmentOnCharta(File chartaFile, int x, int y, BufferedImage fragment) throws IOException {
+    private void insertFragmentIntoCharta(File chartaFile, int x, int y, int width, int height, Resource fragmentData) throws IOException {
         BufferedImage charta = ImageIO.read(chartaFile);
+
+        int chartaWidth = charta.getWidth();
+        int chartaHeight = charta.getHeight();
+
+        checkFragmentIntersection(x, y, chartaWidth, chartaHeight);
+
+        BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
+
+        fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
+
+        BufferedImage fragmentOnCharta = drawFragmentOnCharta(charta, x, y, fragment);
+
+        ImageIO.write(fragmentOnCharta, imageType, chartaFile);
+    }
+
+    private InputStreamResource extractFragmentFromCharta(InputStream is, int x, int y, int width, int height) throws IOException {
+        BufferedImage charta = ImageIO.read(is);
+
+        int chartaWidth = charta.getWidth();
+        int chartaHeight = charta.getHeight();
+
+        checkFragmentIntersection(x, y, chartaWidth, chartaHeight);
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        if (x < 0) {
+            width += x;
+            x = 0;
+        }
+
+        if (y < 0) {
+            height += y;
+            y = 0;
+        }
+
+        int fragmentEndX = x + width;
+        int fragmentEndY = y + height;
+
+        if (fragmentEndX > chartaWidth) {
+            width = fragmentEndX - chartaWidth;
+        }
+        if (fragmentEndY > chartaHeight) {
+            height = fragmentEndY - chartaHeight;
+        }
+
+        ImageIO.write(charta.getSubimage(x, y, width, height), imageType, os);
+
+        return new InputStreamResource(new ByteArrayInputStream(os.toByteArray()));
+    }
+
+    private BufferedImage drawFragmentOnCharta(BufferedImage charta, int x, int y, BufferedImage fragment) throws IOException {
         BufferedImage fragmentOnCharta = new BufferedImage(charta.getWidth(), charta.getHeight(), BufferedImage.TYPE_INT_RGB);
 
         Graphics2D fragmentOnChartaGraphics = fragmentOnCharta.createGraphics();
@@ -198,6 +227,40 @@ public class DefaultChartasService implements ChartasService {
                                           int targetWidth, int targetHeight) {
         image = cropToSizeFromLeftAndTop(image, x, y, width, height);
         image = cropToSizeFromRightAndBottom(image, x, y, width, height, targetWidth, targetHeight);
+        return image;
+    }
+
+    private BufferedImage cropToSizeFromLeftAndTop(BufferedImage image, int x, int y, int width, int height) {
+        if (x < 0 || y < 0) {
+            if (x < 0) {
+                width += x;
+                x = 0;
+            }
+            if (y < 0) {
+                height += y;
+                y = 0;
+            }
+            image = image.getSubimage(x, y, width, height);
+        }
+
+        return image;
+    }
+
+    private BufferedImage cropToSizeFromRightAndBottom(BufferedImage image, int x, int y, int width, int height,
+                                                 int targetWidth, int targetHeight) {
+        int fragmentEndX = x + width;
+        int fragmentEndY = y + height;
+
+        if (fragmentEndX > targetWidth || fragmentEndY > targetHeight) {
+            if (fragmentEndX > targetWidth) {
+                width = fragmentEndX - targetWidth;
+            }
+            if (fragmentEndY > targetHeight) {
+                height = fragmentEndY - targetHeight;
+            }
+            image = image.getSubimage(x, y, width, height);
+        }
+
         return image;
     }
 }
