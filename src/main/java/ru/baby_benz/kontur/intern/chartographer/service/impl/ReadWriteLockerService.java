@@ -67,15 +67,19 @@ public class ReadWriteLockerService implements LockerService {
 
     @Override
     public void freeLock(String id, LockType lockType) {
-        try {
-            if (lockType.equals(LockType.SHARED)) {
-                lockMap.get(id).readLock().unlock();
-            } else if (lockType.equals(LockType.EXCLUSIVE)) {
-                lockMap.get(id).writeLock().unlock();
-            } else {
-                throw new IllegalArgumentException();
+        ReadWriteLock lock = lockMap.get(id);
+        if (lock != null) {
+            try {
+                if (lockType.equals(LockType.SHARED)) {
+                    lock.readLock().unlock();
+                } else if (lockType.equals(LockType.EXCLUSIVE)) {
+                    lock.writeLock().unlock();
+                } else {
+                    throw new IllegalArgumentException();
+                }
+            } catch (IllegalMonitorStateException ignore) {
             }
-        } catch (IllegalMonitorStateException ignore) {}
+        }
     }
 
     @Override
