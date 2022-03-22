@@ -9,15 +9,7 @@ public class ChartaNotFoundException extends RuntimeException {
         super("Charta with specified id not found");
     }
 
-    public ChartaNotFoundException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
-
     public ChartaNotFoundException(final String id) {
         super("Charta with id " +  id + " not found");
-    }
-
-    public ChartaNotFoundException(final Throwable cause) {
-        super(cause);
     }
 }
