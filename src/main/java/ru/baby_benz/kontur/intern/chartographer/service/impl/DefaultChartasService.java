@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import ru.baby_benz.kontur.intern.chartographer.controller.exception.ChartaIOException;
-import ru.baby_benz.kontur.intern.chartographer.controller.exception.FileIsLockedException;
-import ru.baby_benz.kontur.intern.chartographer.controller.exception.IllegalCoordinateFormatException;
-import ru.baby_benz.kontur.intern.chartographer.controller.exception.ServiceIsUnavailableException;
+import ru.baby_benz.kontur.intern.chartographer.controller.exception.*;
 import ru.baby_benz.kontur.intern.chartographer.service.ChartasService;
 import ru.baby_benz.kontur.intern.chartographer.service.LockerService;
 import ru.baby_benz.kontur.intern.chartographer.util.IdGenerator;
@@ -183,9 +180,24 @@ public class DefaultChartasService implements ChartasService {
         return fragmentOnCharta;
     }
 
-    private void checkForPlaneNegativity(int x, int y, int width, int height) {
-        if (x + width < 0 || y + height < 0) {
-            throw new IllegalCoordinateFormatException(x, y, width, height);
+    private void checkFragmentIntersection(int x, int y, int chartaWidth, int chartaHeight) {
+        if (!doesFragmentIntersectCharta(x, y, chartaWidth, chartaHeight)) {
+            throw new NoIntersectionException(x, y, chartaWidth, chartaHeight);
         }
+    }
+
+    private boolean isPlaneNegative(int x, int y, int fragmentWidth, int fragmentHeight) {
+        return x + fragmentWidth < 0 || y + fragmentHeight < 0;
+    }
+
+    private boolean doesFragmentIntersectCharta(int x, int y, int chartaWidth, int chartaHeight) {
+        return x <= chartaWidth || y <= chartaHeight;
+    }
+
+    private BufferedImage cropToSize(BufferedImage image, int x, int y, int width, int height,
+                                          int targetWidth, int targetHeight) {
+        image = cropToSizeFromLeftAndTop(image, x, y, width, height);
+        image = cropToSizeFromRightAndBottom(image, x, y, width, height, targetWidth, targetHeight);
+        return image;
     }
 }
