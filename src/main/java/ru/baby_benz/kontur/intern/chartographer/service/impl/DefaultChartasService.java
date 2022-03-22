@@ -162,14 +162,13 @@ public class DefaultChartasService implements ChartasService {
 
         BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
 
-        if (x < 0 || y < 0) {
-            fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
-            if (x < 0) {
-                x = 0;
-            }
-            if (y < 0) {
-                y = 0;
-            }
+        fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
+
+        if (x < 0) {
+            x = 0;
+        }
+        if (y < 0) {
+            y = 0;
         }
 
         BufferedImage fragmentOnCharta = drawFragmentOnCharta(charta, x, y, fragment);
@@ -241,40 +240,23 @@ public class DefaultChartasService implements ChartasService {
 
     private BufferedImage cropToSize(BufferedImage image, int x, int y, int width, int height,
                                      int targetWidth, int targetHeight) {
-        image = cropToSizeFromLeftAndTop(image, x, y, width, height);
-        image = cropToSizeFromRightAndBottom(image, x, y, width, height, targetWidth, targetHeight);
-        return image;
-    }
+        int xCropFrom = 0, yCropFrom = 0;
 
-    private BufferedImage cropToSizeFromLeftAndTop(BufferedImage image, int x, int y, int width, int height) {
-        int xToStartCropFrom = 0, yToStartCropFrom = 0;
-        int widthToCrop = width, heightToCrop = height;
+        if (x + width > targetWidth) {
+            width = targetWidth - x;
+        }
+        if (y + height > targetHeight) {
+            height = targetHeight - y;
+        }
         if (x < 0) {
-            xToStartCropFrom = x + width;
-            widthToCrop += x;
+            xCropFrom = -x;
+            width += x;
         }
         if (y < 0) {
-            yToStartCropFrom = y + height;
-            heightToCrop += y;
-        }
-        return image.getSubimage(xToStartCropFrom, yToStartCropFrom, widthToCrop, heightToCrop);
-    }
-
-    private BufferedImage cropToSizeFromRightAndBottom(BufferedImage image, int x, int y, int width, int height,
-                                                       int targetWidth, int targetHeight) {
-        int fragmentEndX = x + width;
-        int fragmentEndY = y + height;
-
-        if (fragmentEndX > targetWidth || fragmentEndY > targetHeight) {
-            if (fragmentEndX > targetWidth) {
-                width = targetWidth - x;
-            }
-            if (fragmentEndY > targetHeight) {
-                height = targetHeight - y;
-            }
-            image = image.getSubimage(0, 0, width, height);
+            yCropFrom = -y;
+            height += y;
         }
 
-        return image;
+        return image.getSubimage(xCropFrom, yCropFrom, width, height);
     }
 }

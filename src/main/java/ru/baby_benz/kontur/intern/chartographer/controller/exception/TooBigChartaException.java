@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class TooBigChartaException extends RuntimeException {
     public TooBigChartaException(final int width, final int height, final int allowedWidth, final int allowedHeight) {
         super(
-                "Passed charta dimensions (width:"
+                "Passed charta's dimensions (width:"
                         + width
                         + "px,height:"
                         +  height

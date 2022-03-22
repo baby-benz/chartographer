@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class NoIntersectionException extends RuntimeException {
     public NoIntersectionException(int x, int y, int chartaWidth, int chartaHeight) {
         super(
-                "Fragment's upper left corner (x,y) coordinate ("
+                "Any of the fragment's upper left corner (x,y) coordinates ("
                         + x
                         + ","
                         + y
-                        + ") couldn't be more than charta's dimensions"
+                        + ") shouldn't be more or equal charta's dimensions "
                         + "(width:"
                         + chartaWidth
                         + "px,height:"
