@@ -236,7 +236,7 @@ public class DefaultChartasService implements ChartasService {
     }
 
     private boolean doesFragmentIntersectCharta(int x, int y, int chartaWidth, int chartaHeight) {
-        return x <= chartaWidth || y <= chartaHeight;
+        return x < chartaWidth && y < chartaHeight;
     }
 
     private BufferedImage cropToSize(BufferedImage image, int x, int y, int width, int height,
