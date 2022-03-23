@@ -45,29 +45,33 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public String createCharta(int width, int height) {
-        if (width <= maximumAllowedChartaWidth && height <= maximumAllowedChartaHeight) {
-            String id = IdGenerator.getUUID().toString();
-            LockType lockType = LockType.EXCLUSIVE;
-            try {
-                lockerService.createAndAcquireLock(id, LockType.EXCLUSIVE);
-
-                BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-                String fileName = id + "." + imageType.toLowerCase();
-
-                try {
-                    ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
-                } catch (IOException ioException) {
-                    lockerService.removeLock(id);
-                    throw new ChartaIOException("I/O error during creating a new charta");
-                }
-
-                return id;
-            } finally {
-                lockerService.freeLock(id, lockType);
-            }
-        } else {
+        if (width > maximumAllowedChartaWidth || height > maximumAllowedChartaHeight) {
             throw new TooBigChartaException(width, height, maximumAllowedChartaWidth, maximumAllowedChartaHeight);
+        }
+        if (width <= 0 || height <= 0) {
+            throw new NegativeDimensionsException("Charta", width, height);
+        }
+
+        String id = IdGenerator.getUUID().toString();
+        LockType lockType = LockType.EXCLUSIVE;
+
+        try {
+            lockerService.createAndAcquireLock(id, lockType);
+
+            BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+            String fileName = id + "." + imageType.toLowerCase();
+
+            try {
+                ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
+            } catch (IOException ioException) {
+                lockerService.removeLock(id);
+                throw new ChartaIOException("I/O error during creating a new charta");
+            }
+
+            return id;
+        } finally {
+            lockerService.freeLock(id, lockType);
         }
     }
 
@@ -82,15 +86,15 @@ public class DefaultChartasService implements ChartasService {
         try {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
-            if (isLockAcquired) {
-                try {
-                    insertFragmentIntoCharta(id, x, y, width, height, fragmentData);
-                } catch (IOException ioException) {
-                    lockerService.freeLock(id, lockType);
-                    throw new ChartaIOException("I/O error during fragment putting occurred");
-                }
-            } else {
+            if (!isLockAcquired) {
                 throw new FileIsLockedException(id);
+            }
+
+            try {
+                insertFragmentIntoCharta(id, x, y, width, height, fragmentData);
+            } catch (IOException ioException) {
+                lockerService.freeLock(id, lockType);
+                throw new ChartaIOException("I/O error during fragment putting occurred");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -102,35 +106,37 @@ public class DefaultChartasService implements ChartasService {
 
     @Override
     public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
-        if (width <= maximumAllowedFragmentWidth && height <= maximumAllowedFragmentWidth) {
-            if (isPlaneNegative(x, y, width, height)) {
-                throw new FragmentNegativePlaneException(x, y, width, height);
-            }
-
-            LockType lockType = LockType.SHARED;
-
-            try {
-                boolean isLockAcquired = lockerService.acquireLock(id, lockType);
-
-                if (isLockAcquired) {
-                    String chartaFileName = id + "." + imageType.toLowerCase();
-                    try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, chartaFileName)))) {
-                        return extractFragmentFromCharta(is, x, y, width, height);
-                    } catch (IOException e) {
-                        lockerService.freeLock(id, lockType);
-                        throw new ChartaIOException("I/O error during fragment extraction occurred");
-                    }
-                } else {
-                    throw new FileIsLockedException(id);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
-            } finally {
-                lockerService.freeLock(id, lockType);
-            }
-        } else {
+        if (width > maximumAllowedFragmentWidth || height > maximumAllowedFragmentWidth) {
             throw new TooBigFragmentException(width, height, maximumAllowedFragmentWidth, maximumAllowedFragmentHeight);
+        }
+        if (width <= 0 || height <= 0) {
+            throw new NegativeDimensionsException("Fragment", width, height);
+        }
+        if (isPlaneNegative(x, y, width, height)) {
+            throw new FragmentNegativePlaneException(x, y, width, height);
+        }
+
+        LockType lockType = LockType.SHARED;
+
+        try {
+            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
+
+            if (!isLockAcquired) {
+                throw new FileIsLockedException(id);
+            }
+
+            String chartaFileName = id + "." + imageType.toLowerCase();
+            try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, chartaFileName)))) {
+                return extractFragmentFromCharta(is, x, y, width, height);
+            } catch (IOException e) {
+                lockerService.freeLock(id, lockType);
+                throw new ChartaIOException("I/O error during fragment extraction occurred");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
+        } finally {
+            lockerService.freeLock(id, lockType);
         }
     }
 
@@ -140,17 +146,17 @@ public class DefaultChartasService implements ChartasService {
         try {
             boolean isLockAcquired = lockerService.acquireLock(id, lockType);
 
-            if (isLockAcquired) {
-                String fileName = id + "." + imageType.toLowerCase();
-                try {
-                    Files.delete(Path.of(parentPath, fileName));
-                    lockerService.removeLock(id);
-                } catch (IOException e) {
-                    lockerService.freeLock(id, lockType);
-                    throw new ChartaIOException("I/O error during charta deletion occurred");
-                }
-            } else {
+            if (!isLockAcquired) {
                 throw new FileIsLockedException(id);
+            }
+
+            String fileName = id + "." + imageType.toLowerCase();
+            try {
+                Files.delete(Path.of(parentPath, fileName));
+                lockerService.removeLock(id);
+            } catch (IOException e) {
+                lockerService.freeLock(id, lockType);
+                throw new ChartaIOException("I/O error during charta deletion occurred");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -218,7 +224,7 @@ public class DefaultChartasService implements ChartasService {
 
         Graphics fragmentGraphics = fragment.getGraphics();
         BufferedImage partOfChartaToFragment = charta.getSubimage(x, y, width, height);
-        fragmentGraphics.drawImage(partOfChartaToFragment,  fragmentX, fragmentY, null);
+        fragmentGraphics.drawImage(partOfChartaToFragment, fragmentX, fragmentY, null);
         fragmentGraphics.dispose();
 
         ImageIO.write(fragment, imageType, os);
