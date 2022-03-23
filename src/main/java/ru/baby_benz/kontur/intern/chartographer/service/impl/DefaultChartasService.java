@@ -158,7 +158,10 @@ public class DefaultChartasService implements ChartasService {
         }
     }
 
-    private void insertFragmentIntoCharta(File chartaFile, int x, int y, int width, int height, Resource fragmentData) throws IOException {
+    private void insertFragmentIntoCharta(String chartaId, int x, int y, int width, int height, Resource fragmentData) throws IOException {
+        String chartaFileName = chartaId + "." + imageType.toLowerCase();
+        File chartaFile = new File(parentPath, chartaFileName);
+
         BufferedImage charta = ImageIO.read(chartaFile);
 
         int chartaWidth = charta.getWidth();
@@ -192,27 +195,33 @@ public class DefaultChartasService implements ChartasService {
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        if (x < 0) {
-            width += x;
-            x = 0;
+        BufferedImage fragment = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        if (x + width > chartaWidth) {
+            width = chartaWidth - x;
+        }
+        if (y + height > chartaHeight) {
+            height = chartaHeight - y;
         }
 
+        int fragmentX = 0, fragmentY = 0;
+        if (x < 0) {
+            width += x;
+            fragmentX = -x;
+            x = 0;
+        }
         if (y < 0) {
             height += y;
+            fragmentY = -y;
             y = 0;
         }
 
-        int fragmentEndX = x + width;
-        int fragmentEndY = y + height;
+        Graphics fragmentGraphics = fragment.getGraphics();
+        BufferedImage partOfChartaToFragment = charta.getSubimage(x, y, width, height);
+        fragmentGraphics.drawImage(partOfChartaToFragment,  fragmentX, fragmentY, null);
+        fragmentGraphics.dispose();
 
-        if (fragmentEndX > chartaWidth) {
-            width = fragmentEndX - chartaWidth;
-        }
-        if (fragmentEndY > chartaHeight) {
-            height = fragmentEndY - chartaHeight;
-        }
-
-        ImageIO.write(charta.getSubimage(x, y, width, height), imageType, os);
+        ImageIO.write(fragment, imageType, os);
 
         return new InputStreamResource(new ByteArrayInputStream(os.toByteArray()));
     }
