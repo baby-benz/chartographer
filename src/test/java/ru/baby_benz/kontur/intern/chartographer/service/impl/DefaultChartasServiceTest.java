@@ -3,7 +3,6 @@ package ru.baby_benz.kontur.intern.chartographer.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,10 +15,10 @@ import ru.baby_benz.kontur.intern.chartographer.configuration.ImageProperties;
 import ru.baby_benz.kontur.intern.chartographer.controller.exception.*;
 import ru.baby_benz.kontur.intern.chartographer.service.ChartasService;
 import ru.baby_benz.kontur.intern.chartographer.service.IOService;
+import ru.baby_benz.kontur.intern.chartographer.service.LockerService;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,30 +31,26 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
 @EnableConfigurationProperties(ImageProperties.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @Slf4j
 public class DefaultChartasServiceTest {
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private ImageProperties imageProperties;
     private ChartasService chartasService;
-    @Mock
-    private IOService ioService;
 
-    @BeforeAll
-    public void init() {
-        mockReadCharta();
-        mockWriteCharta();
-        mockRead();
-        chartasService = new DefaultChartasService(imageProperties, ioService);
-    }
+    // Byte form of the RGB black 2x2 bmp image
+    private static final byte[] TEST_FRAGMENT_DATA = {
+            66, 77, 70, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0, 40, 0, 0, 0, 2, 0, 0, 0,
+            2, 0, 0, 0, 1, 0, 24, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     @BeforeEach
     public void setUp() {
-        File chartasFolder = new File(imageProperties.getParentPath());
-        if (!chartasFolder.exists()) {
-            chartasFolder.mkdir();
-        }
+        createTestFolder();
+        IOService ioService = Mockito.spy(new DefaultIOService(imageProperties, Mockito.mock(LockerService.class)));
+        mockIOServiceFileMethods(ioService);
+        chartasService = new DefaultChartasService(imageProperties, ioService);
     }
 
     @AfterEach
@@ -235,7 +230,7 @@ public class DefaultChartasServiceTest {
                 0,
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -247,7 +242,7 @@ public class DefaultChartasServiceTest {
                 getChartaMaxHeight(),
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -259,7 +254,7 @@ public class DefaultChartasServiceTest {
                 1,
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -271,7 +266,7 @@ public class DefaultChartasServiceTest {
                 getChartaMaxHeight(),
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -283,7 +278,7 @@ public class DefaultChartasServiceTest {
                 getChartaMaxHeight() + 1,
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -295,7 +290,7 @@ public class DefaultChartasServiceTest {
                 1,
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -307,7 +302,7 @@ public class DefaultChartasServiceTest {
                 getChartaMaxHeight() + 1,
                 0,
                 0,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -319,7 +314,7 @@ public class DefaultChartasServiceTest {
                 -1,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -331,7 +326,7 @@ public class DefaultChartasServiceTest {
                 0,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -343,7 +338,7 @@ public class DefaultChartasServiceTest {
                 -1,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -355,7 +350,7 @@ public class DefaultChartasServiceTest {
                 getChartaMaxHeight() - 1,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -367,7 +362,7 @@ public class DefaultChartasServiceTest {
                 0,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -379,7 +374,7 @@ public class DefaultChartasServiceTest {
                 getChartaMaxHeight() - 1,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -391,7 +386,7 @@ public class DefaultChartasServiceTest {
                 1,
                 2,
                 2,
-                new InputStreamResource(new ByteArrayInputStream(new byte[]{})))
+                new InputStreamResource(new ByteArrayInputStream(TEST_FRAGMENT_DATA)))
         );
     }
 
@@ -663,21 +658,51 @@ public class DefaultChartasServiceTest {
         return imageProperties.getFragment().getMaxDimensions().getHeight();
     }
 
-    private void mockRead() {
-        Mockito.when(ioService.read(Mockito.any())).thenReturn(
-                new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB)
+    private void createTestFolder() {
+        File chartasFolder = new File(imageProperties.getParentPath());
+        if (!chartasFolder.exists()) {
+            chartasFolder.mkdir();
+        }
+    }
+
+    private void deleteTestFolder() {
+
+    }
+
+    private void mockIOServiceFileMethods(IOService ioService) {
+        mockCreateImage(ioService);
+        mockReadImage(ioService);
+        mockWriteImage(ioService);
+        mockDeleteImage(ioService);
+    }
+
+    private void mockCreateImage(IOService ioService) {
+        Mockito.doNothing().when(ioService).createImage(
+                Mockito.anyString(),
+                Mockito.anyInt(),
+                Mockito.anyInt()
         );
     }
 
-    private void mockReadCharta() {
-        Mockito.when(ioService.readCharta(Mockito.anyString())).thenReturn(
+    private void mockReadImage(IOService ioService) {
+        /*Mockito.when(ioService.readImage(Mockito.anyString())).thenReturn(
                 new BufferedImage(getChartaMaxWidth(),
                         getChartaMaxHeight(),
                         BufferedImage.TYPE_INT_RGB)
-        );
+        );*/
+        Mockito.doReturn(
+                new BufferedImage(
+                        getChartaMaxWidth(),
+                        getChartaMaxHeight(),
+                        BufferedImage.TYPE_INT_RGB)
+        ).when(ioService).readImage(Mockito.anyString());
     }
 
-    private void mockWriteCharta() {
-        Mockito.when(ioService.writeCharta(Mockito.any())).thenReturn(new ByteArrayOutputStream());
+    private void mockWriteImage(IOService ioService) {
+        Mockito.doNothing().when(ioService).writeImage(Mockito.any(), Mockito.anyString());
+    }
+
+    private void mockDeleteImage(IOService ioService) {
+        Mockito.doNothing().when(ioService).deleteImage(Mockito.anyString());
     }
 }

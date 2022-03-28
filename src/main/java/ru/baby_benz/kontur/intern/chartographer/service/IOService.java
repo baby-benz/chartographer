@@ -6,10 +6,15 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 
 public interface IOService {
-    void createCharta(String id, int width, int height);
-    BufferedImage readCharta(String id);
-    BufferedImage read(Resource resource);
-    void writeCharta(String id, BufferedImage charta);
-    ByteArrayOutputStream writeCharta(BufferedImage charta);
-    void deleteCharta(String id);
+    void createImage(String fileId, int width, int height);
+
+    BufferedImage readImage(String fileId);
+
+    BufferedImage readImage(Resource resource);
+
+    void writeImage(BufferedImage charta, String fileId);
+
+    ByteArrayOutputStream writeImage(BufferedImage charta);
+
+    void deleteImage(String fileId);
 }

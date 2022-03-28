@@ -35,7 +35,7 @@ public class DefaultChartasService implements ChartasService {
         }
 
         String id = IdGenerator.getUUID().toString();
-        ioService.createCharta(id, width, height);
+        ioService.createImage(id, width, height);
         return id;
     }
 
@@ -45,9 +45,9 @@ public class DefaultChartasService implements ChartasService {
             throw new FragmentNegativePlaneException(x, y, width, height);
         }
 
-        BufferedImage charta = ioService.readCharta(id);
+        BufferedImage charta = ioService.readImage(id);
         charta = insertFragment(charta, x, y, width, height, fragmentData);
-        ioService.writeCharta(id, charta);
+        ioService.writeImage(charta, id);
     }
 
     @Override
@@ -67,12 +67,12 @@ public class DefaultChartasService implements ChartasService {
             throw new FragmentNegativePlaneException(x, y, width, height);
         }
 
-        return extractFragment(ioService.readCharta(id), x, y, width, height);
+        return extractFragment(ioService.readImage(id), x, y, width, height);
     }
 
     @Override
     public void deleteCharta(String id) {
-        ioService.deleteCharta(id);
+        ioService.deleteImage(id);
     }
 
     private InputStreamResource extractFragment(BufferedImage charta, int x, int y, int width, int height) {
@@ -109,7 +109,7 @@ public class DefaultChartasService implements ChartasService {
         fragmentGraphics.drawImage(partOfChartaToFragment, fragmentX, fragmentY, null);
         fragmentGraphics.dispose();
 
-        return new InputStreamResource(new ByteArrayInputStream(ioService.writeCharta(fragment).toByteArray()));
+        return new InputStreamResource(new ByteArrayInputStream(ioService.writeImage(fragment).toByteArray()));
     }
 
     private BufferedImage insertFragment(BufferedImage charta, int x, int y, int width, int height, Resource fragmentData) {
@@ -120,7 +120,7 @@ public class DefaultChartasService implements ChartasService {
             throw new NoIntersectionException(x, y, chartaWidth, chartaHeight);
         }
 
-        BufferedImage fragment = ioService.read(fragmentData);
+        BufferedImage fragment = ioService.readImage(fragmentData);
 
         fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
 

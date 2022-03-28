@@ -49,10 +49,10 @@ public class DefaultIOService implements IOService {
     }
 
     @Override
-    public void createCharta(String id, int width, int height) {
+    public void createImage(String fileId, int width, int height) {
         BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        String fileName = id + "." + imageProperties.getType();
+        String fileName = fileId + "." + imageProperties.getType();
 
         try {
             ImageIO.write(
@@ -64,37 +64,37 @@ public class DefaultIOService implements IOService {
             throw new ChartaIOException("I/O error occurred while creating a charta");
         }
 
-        lockerService.addLock(id);
+        lockerService.addLock(fileId);
     }
 
     @Override
-    public BufferedImage readCharta(String id) {
+    public BufferedImage readImage(String fileId) {
         LockType lockType = LockType.SHARED;
 
         try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
+            boolean isLockAcquired = lockerService.acquireLock(fileId, lockType);
 
             if (!isLockAcquired) {
-                throw new FileIsLockedException(id);
+                throw new FileIsLockedException(fileId);
             }
 
-            String fileName = id + "." + imageProperties.getType();
+            String fileName = fileId + "." + imageProperties.getType();
             try {
                 return ImageIO.read(Files.newInputStream(Path.of(imageProperties.getParentPath(), fileName)));
             } catch (IOException e) {
-                lockerService.freeLock(id, lockType);
+                lockerService.freeLock(fileId, lockType);
                 throw new ChartaIOException("I/O error occurred while reading a charta");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
         } finally {
-            lockerService.freeLock(id, lockType);
+            lockerService.freeLock(fileId, lockType);
         }
     }
 
     @Override
-    public BufferedImage read(Resource resource) {
+    public BufferedImage readImage(Resource resource) {
         try {
             return ImageIO.read(resource.getInputStream());
         } catch (IOException ioException) {
@@ -103,17 +103,17 @@ public class DefaultIOService implements IOService {
     }
 
     @Override
-    public void writeCharta(String id, BufferedImage charta) {
+    public void writeImage(BufferedImage charta, String fileId) {
         LockType lockType = LockType.EXCLUSIVE;
 
         try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
+            boolean isLockAcquired = lockerService.acquireLock(fileId, lockType);
 
             if (!isLockAcquired) {
-                throw new FileIsLockedException(id);
+                throw new FileIsLockedException(fileId);
             }
 
-            String fileName = id + "." + imageProperties.getType();
+            String fileName = fileId + "." + imageProperties.getType();
             try {
                 ImageIO.write(
                         charta,
@@ -121,19 +121,19 @@ public class DefaultIOService implements IOService {
                         Files.newOutputStream(Path.of(imageProperties.getParentPath(), fileName))
                 );
             } catch (IOException ioException) {
-                lockerService.freeLock(id, lockType);
+                lockerService.freeLock(fileId, lockType);
                 throw new ChartaIOException("I/O error occurred while writing a charta");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
         } finally {
-            lockerService.freeLock(id, lockType);
+            lockerService.freeLock(fileId, lockType);
         }
     }
 
     @Override
-    public ByteArrayOutputStream writeCharta(BufferedImage image) {
+    public ByteArrayOutputStream writeImage(BufferedImage image) {
         final ByteArrayOutputStream output = new ByteArrayOutputStream() {
             @Override
             public synchronized byte[] toByteArray() {
@@ -149,21 +149,21 @@ public class DefaultIOService implements IOService {
     }
 
     @Override
-    public void deleteCharta(String id) {
+    public void deleteImage(String fileId) {
         LockType lockType = LockType.EXCLUSIVE;
         try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
+            boolean isLockAcquired = lockerService.acquireLock(fileId, lockType);
 
             if (!isLockAcquired) {
-                throw new FileIsLockedException(id);
+                throw new FileIsLockedException(fileId);
             }
 
-            String fileName = id + "." + imageProperties.getType();
+            String fileName = fileId + "." + imageProperties.getType();
             try {
                 Files.delete(Path.of(imageProperties.getParentPath(), fileName));
-                lockerService.removeLock(id);
+                lockerService.removeLock(fileId);
             } catch (IOException e) {
-                lockerService.freeLock(id, lockType);
+                lockerService.freeLock(fileId, lockType);
                 throw new ChartaIOException("I/O error occurred while deleting a charta");
             }
         } catch (InterruptedException e) {
