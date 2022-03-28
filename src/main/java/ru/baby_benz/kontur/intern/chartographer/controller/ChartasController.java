@@ -22,7 +22,7 @@ public class ChartasController {
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/{id}/", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void putFragmentOnCharta(@RequestBody InputStreamResource fragmentData, @PathVariable("id") String chartaId,
+    public void putFragment(@RequestBody InputStreamResource fragmentData, @PathVariable("id") String chartaId,
                                     @RequestParam int x, @RequestParam int y,
                                     @RequestParam int width, @RequestParam int height) {
         chartasService.putFragment(chartaId, x, y, width, height, fragmentData);
