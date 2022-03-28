@@ -1,0 +1,12 @@
+service:
+  image:
+    charta:
+      max-dimensions:
+        width: 50
+        height: 50
+    fragment:
+      max-dimensions:
+        width: 25
+        height: 25
+    type: bmp
+    parent-path: ./chartas_test

@@ -1,0 +1,25 @@
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+server:
+  port: 8080
+
+service:
+  http:
+    unavailable:
+      retry-after: 10
+  image:
+    charta:
+      max-dimensions:
+        width: 20000
+        height: 50000
+    fragment:
+      max-dimensions:
+        width: 5000
+        height: 5000
+    type: bmp
+    parent-path: ./chartas
+    lock:
+      trying-time: 10
