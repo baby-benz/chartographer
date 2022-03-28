@@ -21,5 +21,3 @@ service:
         height: 5000
     type: bmp
     parent-path: ./chartas
-    lock:
-      trying-time: 10
