@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @Slf4j
-class DefaultChartasServiceTest {
+public class DefaultChartasServiceTest {
     @Autowired
     private ImageProperties imageProperties;
     private ChartasService chartasService;
@@ -43,7 +43,7 @@ class DefaultChartasServiceTest {
     private IOService ioService;
 
     @BeforeAll
-    void init() {
+    public void init() {
         mockReadCharta();
         mockWriteCharta();
         mockRead();
@@ -51,7 +51,7 @@ class DefaultChartasServiceTest {
     }
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         File chartasFolder = new File(imageProperties.getParentPath());
         if (!chartasFolder.exists()) {
             chartasFolder.mkdir();
@@ -59,7 +59,7 @@ class DefaultChartasServiceTest {
     }
 
     @AfterEach
-    void tearDown() throws IOException {
+    public void tearDown() throws IOException {
         Files.walk(Path.of(imageProperties.getParentPath()))
                 .sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
@@ -74,37 +74,37 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeWidthAndHeight_whenCreateCharta_thenExceptionIsThrown() {
+    public void givenNegativeWidthAndHeight_whenCreateCharta_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.createCharta(-1, -1));
     }
 
     @Test
-    void givenNegativeWidth_whenCreateCharta_thenExceptionIsThrown() {
+    public void givenNegativeWidth_whenCreateCharta_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.createCharta(-1, 1));
     }
 
     @Test
-    void givenNegativeHeight_whenCreateCharta_thenExceptionIsThrown() {
+    public void givenNegativeHeight_whenCreateCharta_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.createCharta(1, -1));
     }
 
     @Test
-    void givenZeroWidthAndHeight_whenCreateCharta_thenExceptionIsThrown() {
+    public void givenZeroWidthAndHeight_whenCreateCharta_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.createCharta(0, 0));
     }
 
     @Test
-    void givenZeroWidth_whenCreateCharta_thenExceptionIsThrown() {
+    public void givenZeroWidth_whenCreateCharta_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.createCharta(0, 1));
     }
 
     @Test
-    void givenZeroHeight_whenCreateCharta_thenExceptionIsThrown() {
+    public void givenZeroHeight_whenCreateCharta_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.createCharta(1, 0));
     }
 
     @Test
-    void givenExceedMaximumWidthAndHeight_whenCreateCharta_thenTooBigChartaExceptionIsThrown() {
+    public void givenExceedMaximumWidthAndHeight_whenCreateCharta_thenTooBigChartaExceptionIsThrown() {
         assertThrows(TooBigChartaException.class, () -> chartasService.createCharta(
                 getChartaMaxWidth() + 1,
                 getChartaMaxHeight() + 1
@@ -112,7 +112,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenExceedMaximumWidth_whenCreateCharta_thenTooBigChartaExceptionIsThrown() {
+    public void givenExceedMaximumWidth_whenCreateCharta_thenTooBigChartaExceptionIsThrown() {
         assertThrows(TooBigChartaException.class, () -> chartasService.createCharta(
                 getChartaMaxWidth() + 1,
                 1
@@ -120,7 +120,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenExceedMaximumHeight_whenCreateCharta_thenTooBigChartaExceptionIsThrown() {
+    public void givenExceedMaximumHeight_whenCreateCharta_thenTooBigChartaExceptionIsThrown() {
         assertThrows(TooBigChartaException.class, () -> chartasService.createCharta(
                 1,
                 getChartaMaxHeight() + 1
@@ -128,7 +128,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenUpperThresholdWidthAndHeight_whenCreateCharta_thenUUIDFromStringWorks() {
+    public void givenUpperThresholdWidthAndHeight_whenCreateCharta_thenUUIDFromStringWorks() {
         assertDoesNotThrow(() ->
                 UUID.fromString(chartasService.createCharta(
                         getChartaMaxWidth(),
@@ -138,7 +138,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenUpperThresholdWidth_whenCreateCharta_thenUUIDFromStringWorks() {
+    public void givenUpperThresholdWidth_whenCreateCharta_thenUUIDFromStringWorks() {
         assertDoesNotThrow(() ->
                 UUID.fromString(chartasService.createCharta(
                         getChartaMaxWidth(),
@@ -148,7 +148,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenUpperThresholdHeight_whenCreateCharta_thenUUIDFromStringWorks() {
+    public void givenUpperThresholdHeight_whenCreateCharta_thenUUIDFromStringWorks() {
         assertDoesNotThrow(() ->
                 UUID.fromString(chartasService.createCharta(
                         1,
@@ -158,7 +158,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenMinimalWidthAndHeight_whenCreateCharta_thenUUIDFromStringWorks() {
+    public void givenMinimalWidthAndHeight_whenCreateCharta_thenUUIDFromStringWorks() {
         assertDoesNotThrow(() ->
                 UUID.fromString(chartasService.createCharta(
                         1,
@@ -168,7 +168,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativePlaneXAndY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenNegativePlaneXAndY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 -1,
@@ -180,7 +180,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativePlaneX_whenPutFragment_thenExceptionIsThrown() {
+    public void givenNegativePlaneX_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 -1,
@@ -192,7 +192,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativePlaneY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenNegativePlaneY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 1,
@@ -204,7 +204,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenZeroXAndY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenZeroXAndY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 0,
@@ -216,7 +216,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenZeroX_whenPutFragment_thenExceptionIsThrown() {
+    public void givenZeroX_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 0,
@@ -228,7 +228,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenZeroY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenZeroY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 1,
@@ -240,7 +240,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenMaxXAndY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenMaxXAndY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 getChartaMaxWidth(),
@@ -252,7 +252,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenMaxX_whenPutFragment_thenExceptionIsThrown() {
+    public void givenMaxX_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 getChartaMaxWidth(),
@@ -264,7 +264,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenMaxY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenMaxY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 1,
@@ -276,7 +276,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenOutOfMaxXAndY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenOutOfMaxXAndY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() + 1,
@@ -288,7 +288,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenOutOfMaxX_whenPutFragment_thenExceptionIsThrown() {
+    public void givenOutOfMaxX_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() + 1,
@@ -300,7 +300,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenOutOfMaxY_whenPutFragment_thenExceptionIsThrown() {
+    public void givenOutOfMaxY_whenPutFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.putFragment(
                 createMaxCharta(),
                 1,
@@ -312,7 +312,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeXAndYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenNegativeXAndYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 -1,
@@ -324,7 +324,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeXFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenNegativeXFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 -1,
@@ -336,7 +336,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenNegativeYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 0,
@@ -348,7 +348,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenPositiveXAndYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenPositiveXAndYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() - 1,
@@ -360,7 +360,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenPositiveXFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenPositiveXFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() - 1,
@@ -372,7 +372,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenPositiveYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenPositiveYFragmentIntersects_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 0,
@@ -384,7 +384,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNonZeroXAndYInBoundsFragment_whenPutFragment_thenNoExceptionIsThrown() {
+    public void givenNonZeroXAndYInBoundsFragment_whenPutFragment_thenNoExceptionIsThrown() {
         assertDoesNotThrow(() -> chartasService.putFragment(
                 createMaxCharta(),
                 1,
@@ -396,7 +396,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenExceedMaximumWidth_whenGetFragment_thenExceptionIsThrown() {
+    public void givenExceedMaximumWidth_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(TooBigFragmentException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 1,
@@ -407,7 +407,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenExceedMaximumHeight_whenGetFragment_thenExceptionIsThrown() {
+    public void givenExceedMaximumHeight_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(TooBigFragmentException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 1,
@@ -418,7 +418,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenExceedMaximumWidthAndHeight_whenGetFragment_thenExceptionIsThrown() {
+    public void givenExceedMaximumWidthAndHeight_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(TooBigFragmentException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 1,
@@ -429,7 +429,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeWidthAndHeight_whenGetFragment_thenExceptionIsThrown() {
+    public void givenNegativeWidthAndHeight_whenGetFragment_thenExceptionIsThrown() {
 
         assertThrows(NegativeDimensionsException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
@@ -441,7 +441,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeWidth_whenGetFragment_thenExceptionIsThrown() {
+    public void givenNegativeWidth_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -452,7 +452,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeHeight_whenGetFragment_thenExceptionIsThrown() {
+    public void givenNegativeHeight_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -463,7 +463,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenZeroWidthAndHeight_whenGetFragment_thenExceptionIsThrown() {
+    public void givenZeroWidthAndHeight_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -474,7 +474,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenZeroWidth_whenGetFragment_thenExceptionIsThrown() {
+    public void givenZeroWidth_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -485,7 +485,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenZeroHeight_whenGetFragment_thenExceptionIsThrown() {
+    public void givenZeroHeight_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NegativeDimensionsException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -496,7 +496,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativePlaneXAndY_whenGetFragment_thenExceptionIsThrown() {
+    public void givenNegativePlaneXAndY_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 -1,
@@ -507,7 +507,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativePlaneX_whenGetFragment_thenExceptionIsThrown() {
+    public void givenNegativePlaneX_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 -1,
@@ -518,7 +518,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativePlaneY_whenGetFragment_thenExceptionIsThrown() {
+    public void givenNegativePlaneY_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(FragmentNegativePlaneException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -529,7 +529,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenOutOfMaxXAndY_whenGetFragment_thenExceptionIsThrown() {
+    public void givenOutOfMaxXAndY_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() + 1,
@@ -540,7 +540,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenOutOfMaxX_whenGetFragment_thenExceptionIsThrown() {
+    public void givenOutOfMaxX_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() + 1,
@@ -551,7 +551,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenOutOfMaxY_whenGetFragment_thenExceptionIsThrown() {
+    public void givenOutOfMaxY_whenGetFragment_thenExceptionIsThrown() {
         assertThrows(NoIntersectionException.class, () -> chartasService.getFragment(
                 createMaxCharta(),
                 1,
@@ -562,7 +562,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeXAndYFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenNegativeXAndYFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 -1,
@@ -573,7 +573,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeXFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenNegativeXFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 -1,
@@ -584,7 +584,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNegativeYFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenNegativeYFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -595,7 +595,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenPositiveXAndYFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenPositiveXAndYFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() - 1,
@@ -606,7 +606,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenPositiveXFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenPositiveXFragmentIntersects_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 getChartaMaxWidth() - 1,
@@ -617,7 +617,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenPositiveYFragmentIntersects_whenPutFragment_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenPositiveYFragmentIntersects_whenPutFragment_whenGetFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 0,
@@ -628,7 +628,7 @@ class DefaultChartasServiceTest {
     }
 
     @Test
-    void givenNonZeroXAndYInBoundsFragment_whenPutFragment_thenInstanceOfInputStreamResourceReturns() {
+    public void givenNonZeroXAndYInBoundsFragment_whenPutFragment_thenInstanceOfInputStreamResourceReturns() {
         assertInstanceOf(InputStreamResource.class, chartasService.getFragment(
                 createMaxCharta(),
                 1,
@@ -636,6 +636,11 @@ class DefaultChartasServiceTest {
                 2,
                 2)
         );
+    }
+
+    @Test
+    public void givenActualChartasId_whenDeleteCharta_thenNoExceptionIsThrown() {
+        assertDoesNotThrow(() -> chartasService.deleteCharta(createMaxCharta()));
     }
 
     private String createMaxCharta() {
