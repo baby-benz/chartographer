@@ -5,8 +5,6 @@ import org.springframework.stereotype.Service;
 import ru.baby_benz.kontur.intern.chartographer.controller.exception.ChartaNotFoundException;
 import ru.baby_benz.kontur.intern.chartographer.service.LockerService;
 
-import javax.annotation.PostConstruct;
-import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -16,26 +14,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Service
 public class ReadWriteLockerService implements LockerService {
     private final ConcurrentMap<String, ReadWriteLock> lockMap = new ConcurrentHashMap<>();
-    @Value("${service.image.parent-path}")
-    private String parentPath;
     @Value("${service.image.lock.trying-time}")
     private long tryingTime;
 
-    @PostConstruct
-    private void discoverChartas() {
-        File chartasFolder = new File(parentPath);
-        File[] chartasFiles = chartasFolder.listFiles();
-        String fileName;
-        if (chartasFiles != null && chartasFiles.length > 0) {
-            for (File chartaFile : chartasFiles) {
-                fileName = chartaFile.getName();
-                lockMap.put(fileName.substring(0, fileName.lastIndexOf('.')), new ReentrantReadWriteLock());
-            }
-        }
+    @Override
+    public void addLock(String id) {
+        lockMap.put(id, new ReentrantReadWriteLock());
     }
 
     @Override
-    public void createAndAcquireLock(String id, LockType lockType) {
+    public void addAndAcquireLock(String id, LockType lockType) {
         lockMap.computeIfAbsent(id, v -> {
             ReadWriteLock lock = new ReentrantReadWriteLock();
             if (lockType.equals(LockType.SHARED)) {

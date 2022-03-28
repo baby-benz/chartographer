@@ -1,78 +1,42 @@
 package ru.baby_benz.kontur.intern.chartographer.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import ru.baby_benz.kontur.intern.chartographer.configuration.ImageProperties;
 import ru.baby_benz.kontur.intern.chartographer.controller.exception.*;
 import ru.baby_benz.kontur.intern.chartographer.service.ChartasService;
-import ru.baby_benz.kontur.intern.chartographer.service.LockerService;
+import ru.baby_benz.kontur.intern.chartographer.service.IOService;
 import ru.baby_benz.kontur.intern.chartographer.util.IdGenerator;
 
-import javax.annotation.PostConstruct;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.ByteArrayInputStream;
 
 @RequiredArgsConstructor
 @Service
 public class DefaultChartasService implements ChartasService {
-    private final LockerService lockerService;
-    @Value("${service.image.type}")
-    private String imageType;
-    @Value("${service.image.parent-path}")
-    private String parentPath;
-    @Value("${service.image.charta.maximum-dimensions.width}")
-    private int maximumAllowedChartaWidth;
-    @Value("${service.image.charta.maximum-dimensions.height}")
-    private int maximumAllowedChartaHeight;
-    @Value("${service.image.fragment.maximum-dimensions.width}")
-    private int maximumAllowedFragmentWidth;
-    @Value("${service.image.fragment.maximum-dimensions.height}")
-    private int maximumAllowedFragmentHeight;
-
-    @PostConstruct
-    private void createChartasFolder() {
-        File chartasFolder = new File(parentPath);
-        if (!chartasFolder.exists()) {
-            chartasFolder.mkdir();
-        }
-    }
+    private final ImageProperties imageProperties;
+    private final IOService ioService;
 
     @Override
     public String createCharta(int width, int height) {
-        if (width > maximumAllowedChartaWidth || height > maximumAllowedChartaHeight) {
-            throw new TooBigChartaException(width, height, maximumAllowedChartaWidth, maximumAllowedChartaHeight);
+        if (exceedsChartaMaxDims(width, height)) {
+            throw new TooBigChartaException(
+                    width,
+                    height,
+                    getChartaMaxWidth(),
+                    getChartaMaxHeight()
+            );
         }
         if (width <= 0 || height <= 0) {
             throw new NegativeDimensionsException("Charta", width, height);
         }
 
         String id = IdGenerator.getUUID().toString();
-        LockType lockType = LockType.EXCLUSIVE;
-
-        try {
-            lockerService.createAndAcquireLock(id, lockType);
-
-            BufferedImage bmp = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-            String fileName = id + "." + imageType.toLowerCase();
-
-            try {
-                ImageIO.write(bmp, imageType, Files.newOutputStream(Path.of(parentPath, fileName)));
-            } catch (IOException ioException) {
-                lockerService.removeLock(id);
-                throw new ChartaIOException("I/O error during creating a new charta");
-            }
-
-            return id;
-        } finally {
-            lockerService.freeLock(id, lockType);
-        }
+        ioService.createCharta(id, width, height);
+        return id;
     }
 
     @Override
@@ -81,33 +45,20 @@ public class DefaultChartasService implements ChartasService {
             throw new FragmentNegativePlaneException(x, y, width, height);
         }
 
-        LockType lockType = LockType.EXCLUSIVE;
-
-        try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
-
-            if (!isLockAcquired) {
-                throw new FileIsLockedException(id);
-            }
-
-            try {
-                insertFragmentIntoCharta(id, x, y, width, height, fragmentData);
-            } catch (IOException ioException) {
-                lockerService.freeLock(id, lockType);
-                throw new ChartaIOException("I/O error during fragment putting occurred");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
-        } finally {
-            lockerService.freeLock(id, lockType);
-        }
+        BufferedImage charta = ioService.readCharta(id);
+        charta = insertFragment(charta, x, y, width, height, fragmentData);
+        ioService.writeCharta(id, charta);
     }
 
     @Override
     public InputStreamResource getFragment(String id, int x, int y, int width, int height) {
-        if (width > maximumAllowedFragmentWidth || height > maximumAllowedFragmentWidth) {
-            throw new TooBigFragmentException(width, height, maximumAllowedFragmentWidth, maximumAllowedFragmentHeight);
+        if (exceedsFragmentMaxDims(width, height)) {
+            throw new TooBigFragmentException(
+                    width,
+                    height,
+                    getFragmentMaxWidth(),
+                    getFragmentMaxHeight()
+            );
         }
         if (width <= 0 || height <= 0) {
             throw new NegativeDimensionsException("Fragment", width, height);
@@ -116,90 +67,21 @@ public class DefaultChartasService implements ChartasService {
             throw new FragmentNegativePlaneException(x, y, width, height);
         }
 
-        LockType lockType = LockType.SHARED;
-
-        try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
-
-            if (!isLockAcquired) {
-                throw new FileIsLockedException(id);
-            }
-
-            String chartaFileName = id + "." + imageType.toLowerCase();
-            try (InputStream is = new BufferedInputStream(Files.newInputStream(Path.of(parentPath, chartaFileName)))) {
-                return extractFragmentFromCharta(is, x, y, width, height);
-            } catch (IOException e) {
-                lockerService.freeLock(id, lockType);
-                throw new ChartaIOException("I/O error during fragment extraction occurred");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
-        } finally {
-            lockerService.freeLock(id, lockType);
-        }
+        return extractFragment(ioService.readCharta(id), x, y, width, height);
     }
 
     @Override
     public void deleteCharta(String id) {
-        LockType lockType = LockType.EXCLUSIVE;
-        try {
-            boolean isLockAcquired = lockerService.acquireLock(id, lockType);
-
-            if (!isLockAcquired) {
-                throw new FileIsLockedException(id);
-            }
-
-            String fileName = id + "." + imageType.toLowerCase();
-            try {
-                Files.delete(Path.of(parentPath, fileName));
-                lockerService.removeLock(id);
-            } catch (IOException e) {
-                lockerService.freeLock(id, lockType);
-                throw new ChartaIOException("I/O error during charta deletion occurred");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ServiceIsUnavailableException("Service is shutting down. Please, retry later");
-        }
+        ioService.deleteCharta(id);
     }
 
-    private void insertFragmentIntoCharta(String chartaId, int x, int y, int width, int height, Resource fragmentData) throws IOException {
-        String chartaFileName = chartaId + "." + imageType.toLowerCase();
-        File chartaFile = new File(parentPath, chartaFileName);
-
-        BufferedImage charta = ImageIO.read(chartaFile);
-
+    private InputStreamResource extractFragment(BufferedImage charta, int x, int y, int width, int height) {
         int chartaWidth = charta.getWidth();
         int chartaHeight = charta.getHeight();
 
-        checkFragmentIntersection(x, y, chartaWidth, chartaHeight);
-
-        BufferedImage fragment = ImageIO.read(fragmentData.getInputStream());
-
-        fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
-
-        if (x < 0) {
-            x = 0;
+        if (!intersectsCharta(x, y, chartaWidth, chartaHeight)) {
+            throw new NoIntersectionException(x, y, chartaWidth, chartaHeight);
         }
-        if (y < 0) {
-            y = 0;
-        }
-
-        BufferedImage fragmentOnCharta = drawFragmentOnCharta(charta, x, y, fragment);
-
-        ImageIO.write(fragmentOnCharta, imageType, chartaFile);
-    }
-
-    private InputStreamResource extractFragmentFromCharta(InputStream is, int x, int y, int width, int height) throws IOException {
-        BufferedImage charta = ImageIO.read(is);
-
-        int chartaWidth = charta.getWidth();
-        int chartaHeight = charta.getHeight();
-
-        checkFragmentIntersection(x, y, chartaWidth, chartaHeight);
-
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         BufferedImage fragment = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
@@ -227,12 +109,28 @@ public class DefaultChartasService implements ChartasService {
         fragmentGraphics.drawImage(partOfChartaToFragment, fragmentX, fragmentY, null);
         fragmentGraphics.dispose();
 
-        ImageIO.write(fragment, imageType, os);
-
-        return new InputStreamResource(new ByteArrayInputStream(os.toByteArray()));
+        return new InputStreamResource(new ByteArrayInputStream(ioService.writeCharta(fragment).toByteArray()));
     }
 
-    private BufferedImage drawFragmentOnCharta(BufferedImage charta, int x, int y, BufferedImage fragment) {
+    private BufferedImage insertFragment(BufferedImage charta, int x, int y, int width, int height, Resource fragmentData) {
+        int chartaWidth = charta.getWidth();
+        int chartaHeight = charta.getHeight();
+
+        if (!intersectsCharta(x, y, chartaWidth, chartaHeight)) {
+            throw new NoIntersectionException(x, y, chartaWidth, chartaHeight);
+        }
+
+        BufferedImage fragment = ioService.read(fragmentData);
+
+        fragment = cropToSize(fragment, x, y, width, height, chartaWidth, chartaHeight);
+
+        if (x < 0) {
+            x = 0;
+        }
+        if (y < 0) {
+            y = 0;
+        }
+
         BufferedImage fragmentOnCharta = new BufferedImage(charta.getWidth(), charta.getHeight(), BufferedImage.TYPE_INT_RGB);
 
         Graphics2D fragmentOnChartaGraphics = fragmentOnCharta.createGraphics();
@@ -245,17 +143,11 @@ public class DefaultChartasService implements ChartasService {
         return fragmentOnCharta;
     }
 
-    private void checkFragmentIntersection(int x, int y, int chartaWidth, int chartaHeight) {
-        if (!doesFragmentIntersectCharta(x, y, chartaWidth, chartaHeight)) {
-            throw new NoIntersectionException(x, y, chartaWidth, chartaHeight);
-        }
-    }
-
     private boolean isPlaneNegative(int x, int y, int fragmentWidth, int fragmentHeight) {
         return x + fragmentWidth <= 0 || y + fragmentHeight <= 0;
     }
 
-    private boolean doesFragmentIntersectCharta(int x, int y, int chartaWidth, int chartaHeight) {
+    private boolean intersectsCharta(int x, int y, int chartaWidth, int chartaHeight) {
         return x < chartaWidth && y < chartaHeight;
     }
 
@@ -279,5 +171,29 @@ public class DefaultChartasService implements ChartasService {
         }
 
         return image.getSubimage(xCropFrom, yCropFrom, width, height);
+    }
+
+    private boolean exceedsChartaMaxDims(int width, int height) {
+        return width > getChartaMaxWidth() || height > getChartaMaxHeight();
+    }
+
+    private boolean exceedsFragmentMaxDims(int width, int height) {
+        return width > getFragmentMaxWidth() || height > getFragmentMaxHeight();
+    }
+
+    private int getChartaMaxWidth() {
+        return imageProperties.getCharta().getMaxDimensions().getWidth();
+    }
+
+    private int getChartaMaxHeight() {
+        return imageProperties.getCharta().getMaxDimensions().getHeight();
+    }
+
+    private int getFragmentMaxWidth() {
+        return imageProperties.getFragment().getMaxDimensions().getWidth();
+    }
+
+    private int getFragmentMaxHeight() {
+        return imageProperties.getFragment().getMaxDimensions().getHeight();
     }
 }
