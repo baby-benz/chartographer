@@ -42,10 +42,8 @@ public class ReadWriteLockerService implements LockerService {
             try {
                 if (lockType.equals(LockType.SHARED)) {
                     lock.readLock().unlock();
-                } else if (lockType.equals(LockType.EXCLUSIVE)) {
-                    lock.writeLock().unlock();
                 } else {
-                    throw new IllegalArgumentException();
+                    lock.writeLock().unlock();
                 }
             } catch (IllegalMonitorStateException ignore) {
             }
