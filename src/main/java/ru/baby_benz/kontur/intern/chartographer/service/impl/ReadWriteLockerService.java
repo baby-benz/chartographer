@@ -27,10 +27,8 @@ public class ReadWriteLockerService implements LockerService {
         if (lock != null) {
             if (lockType.equals(LockType.SHARED)) {
                 return lock.readLock().tryLock(TRYING_SECONDS_DURATION.getSeconds(), TimeUnit.SECONDS);
-            } else if (lockType.equals(LockType.EXCLUSIVE)) {
-                return lock.writeLock().tryLock(TRYING_SECONDS_DURATION.getSeconds(), TimeUnit.SECONDS);
             } else {
-                throw new IllegalArgumentException();
+                return lock.writeLock().tryLock(TRYING_SECONDS_DURATION.getSeconds(), TimeUnit.SECONDS);
             }
         } else {
             throw new ChartaNotFoundException(id);
