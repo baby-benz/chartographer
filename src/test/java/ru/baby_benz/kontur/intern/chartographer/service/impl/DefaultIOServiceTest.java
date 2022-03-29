@@ -62,15 +62,14 @@ public class DefaultIOServiceTest {
     }
 
     @Test
-    public void givenEmptyId_whenReadImage_thenExceptionIsThrown() {
-        assertThrows(ChartaNotFoundException.class, () -> ioService.readImage(""));
+    public void givenEmptyId_whenDeleteTestFolderAndCreateImage_thenExceptionIsThrown() throws IOException {
+        deleteTestFolder();
+        assertThrows(ChartaIOException.class, () -> ioService.createImage("", 2, 2));
     }
 
     @Test
-    public void givenEmptyId_whenInterruptThreadAndCreateImage_thenExceptionIsThrown() {
-        String fileId = "";
-        Thread.currentThread().interrupt();
-        assertThrows(ServiceIsUnavailableException.class, () -> ioService.createImage(fileId, 2, 2));
+    public void givenEmptyId_whenReadImage_thenExceptionIsThrown() {
+        assertThrows(ChartaNotFoundException.class, () -> ioService.readImage(""));
     }
 
     @Test
