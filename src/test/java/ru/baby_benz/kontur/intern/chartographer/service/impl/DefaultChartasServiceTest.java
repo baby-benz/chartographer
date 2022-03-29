@@ -663,7 +663,7 @@ public class DefaultChartasServiceTest {
                 .map(Path::toFile)
                 .forEach((File fileToBeDeleted) -> {
                     if (!fileToBeDeleted.delete()) {
-                        log.error(
+                        log.warn(
                                 "Error while deleting test folder " + imageProperties.getParentPath()
                                         + ". Please, delete it manually"
                         );
